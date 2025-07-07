@@ -41,7 +41,6 @@
             label1.Size = new Size(782, 267);
             label1.TabIndex = 0;
             label1.Text = "This Form is only used,\r\nso modules don't throw\r\nan error in VS.\r\n";
-            label1.Click += label1_Click;
             // 
             // Main
             // 
