@@ -89,7 +89,7 @@ namespace SerpentModding
             _minimumLevel = minimumLevel;
             _logToConsole = logToConsole;
 
-            var assemblyName = Assembly.GetExecutingAssembly().GetName().Name;
+            var assemblyName = AppDomain.CurrentDomain.FriendlyName;
             _logDirectory = Path.Combine(AppContext.BaseDirectory, $"{assemblyName}-Logs");
             Directory.CreateDirectory(_logDirectory);
             _logFilePath = Path.Combine(_logDirectory, $"{DateTime.UtcNow:yyyy-MM-dd_HH-mm-ss}.log");
