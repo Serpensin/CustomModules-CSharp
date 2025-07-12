@@ -84,5 +84,10 @@ jobs:
       - name: Pack
         run: dotnet pack SerpentModding.csproj --configuration Release --no-build --output ./nupkg
 
+      - name: List generated packages
+        run: |
+            ls -la ./nupkg 
+            ls -la ${{ github.workspace }}/nupkg/
+
       - name: Push package to NuGet.org
         run: dotnet nuget push ${{ github.workspace }}/nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
