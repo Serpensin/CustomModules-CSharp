@@ -145,14 +145,14 @@ namespace SerpentModding
         }
 
         /// <summary>
-        /// Registers a <see cref="UserControl"/> with the UI controller under the specified name.
-        /// Stores the control and its original position for later use in UI transitions.
+        /// Registers a <see cref="UserControl"/> with a unique name for later display and animated transitions.
+        /// Stores the control's original position for use in transition animations.
         /// </summary>
         /// <param name="name">
-        /// The unique name to associate with the control. This name is used to reference the control when switching UI views.
+        /// The unique name to associate with the control. Used to reference the control in other UIController methods.
         /// </param>
         /// <param name="control">
-        /// The <see cref="UserControl"/> instance to register. The control's initial <see cref="UserControl.Location"/> is stored for transition animations.
+        /// The <see cref="UserControl"/> instance to register.
         /// </param>
         public static void RegisterControl(string name, UserControl control)
         {

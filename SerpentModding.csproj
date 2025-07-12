@@ -7,6 +7,22 @@
     <UseWindowsForms>true</UseWindowsForms>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageId>SerpentModding.CustomCSharpModules</PackageId>
+    <Title>SerpentModding Custom CSharp Modules</Title>
+    <Authors>Serpensin</Authors>
+    <Company>SerpentModding</Company>
+    <Product>SerpentModding.CustomCSharpModules</Product>
+    <Description>Common utility library for SerpentModding projects. Provides advanced UI management, animated transitions, and robust logging for .NET 9 WinForms applications.</Description>
+    <Copyright>Copyright © 2025 SerpentModding</Copyright>
+    <PackageTags>winforms;ui;logging;animation;serpentmodding;utility</PackageTags>
+    <RepositoryUrl>https://github.com/Serpensin/CustomModules-CSharp</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/Serpensin/CustomModules-CSharp</PackageProjectUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <Version>1.0.0.0</Version>
+    <PackageReleaseNotes>Initial release for .NET 9. Includes UIController, KITTScanner, and Logger modules.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -19,6 +35,9 @@
 
   <ItemGroup>
     <Using Include="System.Windows.Forms" />
+    <None Include="README.md" Pack="true" PackagePath="\"/>
+    <None Include="LICENSE.txt" Pack="true" PackagePath=""/>
+    <None Include="icon.png" Pack="true" PackagePath="" Condition="Exists('icon.png')"/>
   </ItemGroup>
 
 </Project>

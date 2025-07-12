@@ -1,0 +1,59 @@
+name: Build and Publish NuGet
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'NuGet-Paketversion (z.B. 1.2.3) – wird nur bei manuellem Start verwendet'
+        required: false
+        default: ''
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Extract version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update csproj version
+        run: |
+          $proj = 'SerpentModding.csproj'
+          $version = '${{ steps.get_version.outputs.version }}'
+          if (-not $version) { Write-Error 'No version specified or detected!'; exit 1 }
+          $content = Get-Content $proj -Raw
+          if ($content -match '<Version>.*</Version>') {
+            $content = $content -replace '<Version>.*</Version>', "<Version>$version</Version>"
+          } else {
+            $content = $content -replace '(<PropertyGroup>)', "`$1`n    <Version>$version</Version>"
+          }
+          Set-Content $proj $content
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Pack
+        run: dotnet pack --configuration Release --no-build --output ./nupkg
+
+      - name: Push package to NuGet.org
+        run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
