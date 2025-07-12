@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'NuGet-Paketversion (z.B. 1.2.3) – wird nur bei manuellem Start verwendet'
+        description: 'NuGet package version (e.g. 1.2.3) – only used for manual runs'
         required: false
         default: ''
 
@@ -43,6 +43,34 @@ jobs:
             $content = $content -replace '<Version>.*</Version>', "<Version>$version</Version>"
           } else {
             $content = $content -replace '(<PropertyGroup>)', "`$1`n    <Version>$version</Version>"
+          }
+          Set-Content $proj $content
+
+      - name: Extract release notes from CHANGELOG.md
+        id: changelog
+        shell: pwsh
+        run: |
+          $version = '${{ steps.get_version.outputs.version }}'
+          $lines = Get-Content CHANGELOG.md
+          $start = ($lines | Select-String "## \[$version\]").LineNumber
+          if (-not $start) { Write-Error "No changelog entry for version $version"; exit 1 }
+          $startIdx = $start
+          $next = ($lines | Select-String "^## \[" | Where-Object { $_.LineNumber -gt $startIdx }) | Select-Object -First 1
+          $endIdx = if ($next) { $next.LineNumber - 1 } else { $lines.Count }
+          $notes = $lines[($startIdx)..($endIdx - 1)] -join "`n"
+          $notes = $notes -replace '^## \[.*\] - .*\r?\n?', ''
+          echo "notes<<EOF" >> $env:GITHUB_OUTPUT
+          echo "$notes" >> $env:GITHUB_OUTPUT
+          echo "EOF" >> $env:GITHUB_OUTPUT
+
+      - name: Update csproj release notes
+        shell: pwsh
+        run: |
+          $proj = 'SerpentModding.csproj'
+          $notes = '${{ steps.changelog.outputs.notes }}'
+          $content = Get-Content $proj -Raw
+          if ($content -match '<PackageReleaseNotes>.*</PackageReleaseNotes>') {
+            $content = $content -replace '<PackageReleaseNotes>.*</PackageReleaseNotes>', "<PackageReleaseNotes>$notes</PackageReleaseNotes>"
           }
           Set-Content $proj $content
 
