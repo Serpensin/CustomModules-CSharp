@@ -85,17 +85,11 @@ jobs:
       - name: Pack
         run: dotnet pack SerpentModding.csproj --configuration Release --no-build --output nupkg
 
-      - name: Fail if no package found
+      - name: Push package(s) to NuGet.org
         shell: pwsh
         run: |
           $nupkgs = Get-ChildItem -Path 'nupkg' -Filter '*.nupkg'
-          if (-not $nupkgs) {
-            Write-Error 'No .nupkg file found in nupkg directory!'
-            exit 1
-          } else {
-            Write-Host "Found the following .nupkg file(s):"
-            $nupkgs | ForEach-Object { Write-Host " - $($_.FullName)" }
+          foreach ($pkg in $nupkgs) {
+            Write-Host "Pushing $($pkg.FullName)..."
+            dotnet nuget push $pkg.FullName --api-key '${{ secrets.NUGET_API_KEY }}' --source https://api.nuget.org/v3/index.json --skip-duplicate
           }
-
-      - name: Push package to NuGet.org
-        run: dotnet nuget push nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
