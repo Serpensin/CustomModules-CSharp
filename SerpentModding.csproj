@@ -32,7 +32,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Workflows\**" />
+    <EmbeddedResource Remove="Workflows\**" />
+    <None Remove="Workflows\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="System.Windows.Forms" />
+    <None Include=".github\workflows\ci.yml" />
+    <None Include=".github\workflows\nuget-publish.yml" />
     <None Include="README.md" Pack="true" PackagePath="\" />
     <None Include="LICENSE.txt" Pack="true" PackagePath="" />
     <None Include="icon.png" Pack="true" PackagePath="" Condition="Exists('icon.png')" />
