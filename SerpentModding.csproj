@@ -33,9 +33,17 @@
 
   <ItemGroup>
     <Using Include="System.Windows.Forms" />
-    <None Include="README.md" Pack="true" PackagePath="\"/>
-    <None Include="LICENSE.txt" Pack="true" PackagePath=""/>
-    <None Include="icon.png" Pack="true" PackagePath="" Condition="Exists('icon.png')"/>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="LICENSE.txt" Pack="true" PackagePath="" />
+    <None Include="icon.png" Pack="true" PackagePath="" Condition="Exists('icon.png')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

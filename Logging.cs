@@ -146,12 +146,12 @@ namespace SerpentModding
 
             lock (_lock)
             {
-                File.AppendAllText(_logFilePath, formatted + Environment.NewLine);
+                //File.AppendAllText(_logFilePath, formatted + Environment.NewLine);
                 if (_logToConsole)
                 {
                     var previousColor = Console.ForegroundColor;
                     Console.ForegroundColor = GetColor(level);
-                    Console.WriteLine(formatted);
+                    //Console.WriteLine(formatted);
                     Console.ForegroundColor = previousColor;
                 }
             }
