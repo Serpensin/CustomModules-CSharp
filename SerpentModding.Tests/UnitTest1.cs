@@ -8,13 +8,29 @@ using Xunit;
 namespace SerpentModding.Tests;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-public class LoggerTests
+public class LoggerTests : IDisposable
 {
+    private readonly string _tempLogDirectory;
+
+    public LoggerTests()
+    {
+        _tempLogDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(_tempLogDirectory);
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempLogDirectory))
+        {
+            Directory.Delete(_tempLogDirectory, true);
+        }
+    }
+
     [Fact]
     public void Logger_InitializesAndWritesLogFile()
     {
         var logger = Logger.Instance;
-        logger.Initialize(LogLevel.Info, logToConsole: false);
+        logger.Initialize(LogLevel.Info, logToConsole: false, logDirectory: _tempLogDirectory);
         var logPath = logger.GetLogFilePath();
         logger.Info("Test log entry");
         var logs = logger.ReadAllLogs();
