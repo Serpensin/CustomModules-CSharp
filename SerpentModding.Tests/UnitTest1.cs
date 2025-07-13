@@ -7,6 +7,7 @@ using Xunit;
 
 namespace SerpentModding.Tests;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 public class LoggerTests
 {
     [Fact]
@@ -60,7 +61,7 @@ public class LoggerTests
     public void Logger_GetLogFilePath_And_ReadAllLogs_BeforeInit()
     {
         var logger = Logger.Instance;
-        // Simuliere uninitialisierten Logger
+        // Simulate uninitialized Logger
         var path = logger.GetLogFilePath();
         var logs = logger.ReadAllLogs();
         Assert.True(string.IsNullOrEmpty(path) || !File.Exists(path));
@@ -146,7 +147,8 @@ public class KITTScannerTests
         var panel = new Panel { Width = 100, Height = 20 };
         var scanner = new KITTScanner(panel);
         scanner.Start();
-        // Es gibt kein öffentliches Property für isRunning, aber kein Exception = Erfolg
+        // There is no public property for isRunning, but no exception = success
         scanner.Stop();
     }
 }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
