@@ -8,7 +8,7 @@ on:
     inputs:
       version:
         description: 'NuGet package version (e.g. 1.2.3) – only used for manual runs'
-        required: false
+        required: true
         default: ''
 
 jobs:
@@ -35,6 +35,7 @@ jobs:
           fi
 
       - name: Update csproj version
+        shell: pwsh
         run: |
           $proj = 'SerpentModding.csproj'
           $version = '${{ steps.get_version.outputs.version }}'
@@ -85,12 +86,16 @@ jobs:
         run: dotnet pack SerpentModding.csproj --configuration Release --no-build --output nupkg
 
       - name: Fail if no package found
+        shell: pwsh
         run: |
-          if (!(Test-Path -Path 'nupkg/*.nupkg')) {
+          $nupkgs = Get-ChildItem -Path 'nupkg' -Filter '*.nupkg'
+          if (-not $nupkgs) {
             Write-Error 'No .nupkg file found in nupkg directory!'
             exit 1
+          } else {
+            Write-Host "Found the following .nupkg file(s):"
+            $nupkgs | ForEach-Object { Write-Host " - $($_.FullName)" }
           }
-        shell: pwsh
 
       - name: Push package to NuGet.org
         run: dotnet nuget push nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
