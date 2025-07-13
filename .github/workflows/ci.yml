@@ -20,4 +20,4 @@ jobs:
       - name: Build
         run: dotnet build SerpentModding.csproj --no-restore --configuration Release
       - name: Test
-        run: dotnet test --no-build --configuration Release --verbosity normal
+        run: dotnet test SerpentModding.Tests/SerpentModding.Tests.csproj --no-build --configuration Release --verbosity normal
