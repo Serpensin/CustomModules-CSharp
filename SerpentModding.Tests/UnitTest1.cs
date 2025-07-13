@@ -4,9 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using Xunit;
+using Xunit.Sdk;
 
 namespace SerpentModding.Tests;
 
+[Collection("STA Tests")]
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 public class LoggerTests : IDisposable
 {
