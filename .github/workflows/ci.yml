@@ -18,4 +18,4 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore SerpentModding/SerpentModding.csproj
       - name: Test
-        run: dotnet test SerpentModding.Tests/SerpentModding.Tests.csproj --configuration Release --verbosity detailed
+        run: dotnet test SerpentModding.Tests/SerpentModding.Tests.csproj --configuration Release --verbosity normal
