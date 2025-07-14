@@ -46,7 +46,7 @@ jobs:
       - name: Update csproj version
         shell: pwsh
         run: |
-          $proj = 'SerpentModding.csproj'
+          $proj = 'SerpentModding/SerpentModding.csproj'
           $version = '${{ steps.get_version.outputs.version }}'
           if (-not $version) { Write-Error 'No version specified or detected!'; exit 1 }
           $content = Get-Content $proj -Raw
@@ -77,7 +77,7 @@ jobs:
       - name: Update csproj release notes
         shell: pwsh
         run: |
-          $proj = 'SerpentModding.csproj'
+          $proj = 'SerpentModding/SerpentModding.csproj'
           $notes = '${{ steps.changelog.outputs.notes }}'
           $content = Get-Content $proj -Raw
           if ($content -match '<PackageReleaseNotes>.*</PackageReleaseNotes>') {
@@ -86,13 +86,13 @@ jobs:
           Set-Content $proj $content
 
       - name: Restore dependencies
-        run: dotnet restore SerpentModding.csproj
+        run: dotnet restore SerpentModding/SerpentModding.csproj
 
       - name: Build
-        run: dotnet build SerpentModding.csproj --configuration Release --no-restore
+        run: dotnet build SerpentModding/SerpentModding.csproj --configuration Release --no-restore
 
       - name: Pack
-        run: dotnet pack SerpentModding.csproj --configuration Release --no-build --output nupkg
+        run: dotnet pack SerpentModding/SerpentModding.csproj --configuration Release --no-build --output nupkg
 
       - name: Push package(s) to NuGet.org
         shell: pwsh
