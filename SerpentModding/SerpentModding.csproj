@@ -7,8 +7,8 @@
     <UseWindowsForms>true</UseWindowsForms>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <PackageReadmeFile>../README.md</PackageReadmeFile>
-    <PackageLicenseFile>../LICENSE.txt</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageId>SerpentModding.CustomCSharpModules</PackageId>
     <Title>SerpentModding Custom CSharp Modules</Title>
     <Authors>Serpensin</Authors>
@@ -51,7 +51,7 @@
   <ItemGroup>
     <Using Include="System.Windows.Forms" />
     <None Include="../README.md" Pack="true" PackagePath="\" />
-    <None Include="../LICENSE.txt" Pack="true" PackagePath="" />
+    <None Include="../LICENSE.txt" Pack="true" PackagePath="\" />
     <None Include="icon.png" Pack="true" PackagePath="" Condition="Exists('icon.png')" />
   </ItemGroup>
 
