@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - 'v*.*.*'
-    branches:
-      - master
   workflow_dispatch:
     inputs:
       version:
@@ -27,6 +25,25 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if tag is on master
+        id: check_tag
+        shell: bash
+        run: |
+          git fetch origin master
+          if git merge-base --is-ancestor origin/master ${{ github.sha }}; then
+            echo "on_master=true" >> $GITHUB_OUTPUT
+          else
+            echo "on_master=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Fail if tag is not on master
+        if: steps.check_tag.outputs.on_master != 'true'
+        run: |
+          echo "Tag is not on master. Exiting."
+          exit 1
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
