@@ -1,0 +1,104 @@
+name: Build and Publish NuGet
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+    branches:
+      - ${{ github.event.repository.default_branch }}
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'NuGet package version (e.g. 1.2.3) – only used for manual runs'
+        required: true
+        default: ''
+
+jobs:
+  check-branch:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "This workflow only runs on the default branch."
+
+  build:
+    needs: check-branch
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Extract version
+        id: get_version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update csproj version
+        shell: pwsh
+        run: |
+          $proj = 'SerpentModding.csproj'
+          $version = '${{ steps.get_version.outputs.version }}'
+          if (-not $version) { Write-Error 'No version specified or detected!'; exit 1 }
+          $content = Get-Content $proj -Raw
+          if ($content -match '<Version>.*</Version>') {
+            $content = $content -replace '<Version>.*</Version>', "<Version>$version</Version>"
+          } else {
+            $content = $content -replace '(<PropertyGroup>)', "`$1`n    <Version>$version</Version>"
+          }
+          Set-Content $proj $content
+
+      - name: Extract release notes from CHANGELOG.md
+        id: changelog
+        shell: pwsh
+        run: |
+          $version = '${{ steps.get_version.outputs.version }}'
+          $lines = Get-Content CHANGELOG.md
+          $start = ($lines | Select-String "## \[$version\]").LineNumber
+          if (-not $start) { Write-Error "No changelog entry for version $version"; exit 1 }
+          $startIdx = $start
+          $next = ($lines | Select-String "^## \[" | Where-Object { $_.LineNumber -gt $startIdx }) | Select-Object -First 1
+          $endIdx = if ($next) { $next.LineNumber - 1 } else { $lines.Count }
+          $notes = $lines[($startIdx)..($endIdx - 1)] -join "`n"
+          $notes = $notes -replace '^## \[.*\] - .*\r?\n?', ''
+          echo "notes<<EOF" >> $env:GITHUB_OUTPUT
+          echo "$notes" >> $env:GITHUB_OUTPUT
+          echo "EOF" >> $env:GITHUB_OUTPUT
+
+      - name: Update csproj release notes
+        shell: pwsh
+        run: |
+          $proj = 'SerpentModding.csproj'
+          $notes = '${{ steps.changelog.outputs.notes }}'
+          $content = Get-Content $proj -Raw
+          if ($content -match '<PackageReleaseNotes>.*</PackageReleaseNotes>') {
+            $content = $content -replace '<PackageReleaseNotes>.*</PackageReleaseNotes>', "<PackageReleaseNotes>$notes</PackageReleaseNotes>"
+          }
+          Set-Content $proj $content
+
+      - name: Restore dependencies
+        run: dotnet restore SerpentModding.csproj
+
+      - name: Build
+        run: dotnet build SerpentModding.csproj --configuration Release --no-restore
+
+      - name: Pack
+        run: dotnet pack SerpentModding.csproj --configuration Release --no-build --output nupkg
+
+      - name: Push package(s) to NuGet.org
+        shell: pwsh
+        run: |
+          $nupkgs = Get-ChildItem -Path 'nupkg' -Filter '*.nupkg'
+          foreach ($pkg in $nupkgs) {
+            Write-Host "Pushing $($pkg.FullName)..."
+            dotnet nuget push $pkg.FullName --api-key '${{ secrets.NUGET_API_KEY }}' --source https://api.nuget.org/v3/index.json --skip-duplicate
+          }

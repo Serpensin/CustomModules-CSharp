@@ -6,7 +6,6 @@ using System.Windows.Forms;
 using Xunit;
 using Xunit.Sdk;
 
-namespace SerpentModding.Tests;
 
 [Collection("STA Tests")]
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
@@ -56,7 +55,10 @@ public class LoggerTests : IDisposable
     public void Logger_LogLevelFiltering_Works()
     {
         var logger = Logger.Instance;
-        logger.Initialize(LogLevel.Warn, logToConsole: false);
+        // Use a unique log directory for this test to avoid log file contamination
+        var uniqueLogDir = Path.Combine(_tempLogDirectory, Guid.NewGuid().ToString());
+        Directory.CreateDirectory(uniqueLogDir);
+        logger.Initialize(LogLevel.Warn, logToConsole: false, logDirectory: uniqueLogDir);
         logger.Info("ShouldNotAppear");
         logger.Warn("ShouldAppear");
         var logs = logger.ReadAllLogs();

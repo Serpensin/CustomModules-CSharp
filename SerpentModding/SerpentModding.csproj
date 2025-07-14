@@ -7,8 +7,8 @@
     <UseWindowsForms>true</UseWindowsForms>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageReadmeFile>../README.md</PackageReadmeFile>
+    <PackageLicenseFile>../LICENSE.txt</PackageLicenseFile>
     <PackageId>SerpentModding.CustomCSharpModules</PackageId>
     <Title>SerpentModding Custom CSharp Modules</Title>
     <Authors>Serpensin</Authors>
@@ -32,26 +32,27 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Workflows\**" />
-    <EmbeddedResource Remove="Workflows\**" />
-    <None Remove="Workflows\**" />
+    <Compile Include="SerpentModding\**\*.cs" />
+    <EmbeddedResource Include="SerpentModding\**\*.resx" />
+    <None Include="SerpentModding\**\*.*" Exclude="**\*.cs;**\*.resx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove=".github\**" />
+    <EmbeddedResource Remove=".github\**" />
+    <None Remove=".github\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Properties\ci.yml" />
+    <None Remove="Properties\nuget-publish.yml" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="System.Windows.Forms" />
-    <None Include=".github\workflows\ci.yml" />
-    <None Include=".github\workflows\nuget-publish.yml" />
-    <None Include="README.md" Pack="true" PackagePath="\" />
-    <None Include="LICENSE.txt" Pack="true" PackagePath="" />
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+    <None Include="../LICENSE.txt" Pack="true" PackagePath="" />
     <None Include="icon.png" Pack="true" PackagePath="" Condition="Exists('icon.png')" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="xunit" Version="2.9.3" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.1">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
 </Project>
