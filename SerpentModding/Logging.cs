@@ -77,22 +77,26 @@ namespace SerpentModding
         private Logger() { }
 
         /// <summary>
-        /// Initializes the logger with the specified minimum log level and console output option.
+        /// Initializes the logger with the specified minimum log level, console output option, and optional log directory.
         /// </summary>
         /// <param name="minimumLevel">The minimum <see cref="LogLevel"/> to log.</param>
         /// <param name="logToConsole">Whether to also log messages to the console.</param>
-        public void Initialize(LogLevel minimumLevel = LogLevel.Debug, bool logToConsole = true)
+        /// <param name="logDirectory">Optional custom directory for the log file. If null, uses the default directory.</param>
+        public void Initialize(LogLevel minimumLevel = LogLevel.Debug, bool logToConsole = true, string? logDirectory = null)
         {
-            if (_isInitialized)
-                return;
-
+            // Always update configuration, even if already initialized
             _minimumLevel = minimumLevel;
             _logToConsole = logToConsole;
 
             var assemblyName = AppDomain.CurrentDomain.FriendlyName;
-            _logDirectory = Path.Combine(AppContext.BaseDirectory, $"{assemblyName}-Logs");
+            _logDirectory = !string.IsNullOrWhiteSpace(logDirectory)
+                ? logDirectory
+                : Path.Combine(AppContext.BaseDirectory, $"{assemblyName}-Logs");
             Directory.CreateDirectory(_logDirectory);
             _logFilePath = Path.Combine(_logDirectory, $"{DateTime.UtcNow:yyyy-MM-dd_HH-mm-ss}.log");
+
+            if (_isInitialized)
+                return;
 
             AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             {
