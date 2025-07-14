@@ -102,3 +102,14 @@ jobs:
             Write-Host "Pushing $($pkg.FullName)..."
             dotnet nuget push $pkg.FullName --api-key '${{ secrets.NUGET_API_KEY }}' --source https://api.nuget.org/v3/index.json --skip-duplicate
           }
+
+      - name: Push package(s) to GitHub Packages
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $nupkgs = Get-ChildItem -Path 'nupkg' -Filter '*.nupkg'
+          foreach ($pkg in $nupkgs) {
+            Write-Host "Pushing $($pkg.FullName) to GitHub Packages..."
+            dotnet nuget push $pkg.FullName --api-key $env:GITHUB_TOKEN --source https://nuget.pkg.github.com/Serpensin/index.json --skip-duplicate
+          }
