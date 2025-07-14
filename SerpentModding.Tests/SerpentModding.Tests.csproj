@@ -9,6 +9,7 @@
     <UseWPF>false</UseWPF>
     <AssemblyName>SerpentModding.Tests</AssemblyName>
     <RootNamespace>SerpentModding.Tests</RootNamespace>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
