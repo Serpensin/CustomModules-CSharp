@@ -126,8 +126,20 @@ jobs:
       - name: Pack
         run: dotnet pack SerpentModding/SerpentModding.csproj --configuration Release --no-build --output nupkg
 
+      - name: Check if on default branch
+        id: check_default_branch
+        shell: bash
+        run: |
+          DEFAULT_BRANCH="master"
+          git fetch origin $DEFAULT_BRANCH
+          if git merge-base --is-ancestor origin/$DEFAULT_BRANCH ${{ github.sha }}; then
+            echo "on_default_branch=true" >> $GITHUB_OUTPUT
+          else
+            echo "on_default_branch=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Push package(s) to NuGet.org
-        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run != true)
+        if: (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run != true)) && steps.check_default_branch.outputs.on_default_branch == 'true'
         shell: pwsh
         run: |
           $nupkgs = Get-ChildItem -Path 'nupkg' -Filter '*.nupkg'
@@ -137,7 +149,7 @@ jobs:
           }
 
       - name: Push package(s) to GitHub Packages
-        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run != true)
+        if: (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run != true)) && steps.check_default_branch.outputs.on_default_branch == 'true'
         shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
