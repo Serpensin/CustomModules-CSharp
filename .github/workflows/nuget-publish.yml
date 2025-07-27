@@ -13,7 +13,8 @@ on:
       dry_run:
         description: 'If true, skip pushing packages (for CI dry-run integration)'
         required: false
-        default: 'false'
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       version:
@@ -131,7 +132,7 @@ jobs:
 
       - name: Push package(s) to NuGet.org
         if: |
-          github.event_name != 'workflow_call' && (github.event.inputs.dry_run != 'true') && (inputs.dry_run != true)
+          github.event_name != 'workflow_call' && (!github.event.inputs.dry_run) && (!inputs.dry_run)
         shell: pwsh
         run: |
           $nupkgs = Get-ChildItem -Path 'nupkg' -Filter '*.nupkg'
@@ -142,7 +143,7 @@ jobs:
 
       - name: Push package(s) to GitHub Packages
         if: |
-          github.event_name != 'workflow_call' && (github.event.inputs.dry_run != 'true') && (inputs.dry_run != true)
+          github.event_name != 'workflow_call' && (!github.event.inputs.dry_run) && (!inputs.dry_run)
         shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
