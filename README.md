@@ -22,8 +22,11 @@ UIController.Init(this);
 UIController.RegisterControl("Home", homeUserControl);
 UIController.RegisterControl("Settings", settingsUserControl);
 
+// Remove a registered control by name
+UIController.RemoveControl("Settings");
+
 // Switch views with animation
-UIController.ShowControl("Settings", UIController.TransitionDirection.Left, 500, UIController.EasingMode.EaseInOut);
+UIController.ShowControl("Home", UIController.TransitionDirection.Left, 500, UIController.EasingMode.EaseInOut);
 
 // Set window title and icon
 UIController.SetWindowTitle("My App");

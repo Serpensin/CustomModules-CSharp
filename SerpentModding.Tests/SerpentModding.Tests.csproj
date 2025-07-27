@@ -10,7 +10,6 @@
     <AssemblyName>SerpentModding.Tests</AssemblyName>
     <RootNamespace>SerpentModding.Tests</RootNamespace>
     <IsTestProject>true</IsTestProject>
-    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
