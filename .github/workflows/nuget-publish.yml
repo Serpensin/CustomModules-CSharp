@@ -9,6 +9,7 @@ on:
       version:
         description: 'NuGet package version (e.g. 1.2.3) – only used for manual runs'
         required: true
+        type: string
         default: ''
       dry_run:
         description: 'If true, skip pushing packages (for CI dry-run integration)'
@@ -131,8 +132,7 @@ jobs:
         run: dotnet pack SerpentModding/SerpentModding.csproj --configuration Release --no-build --output nupkg
 
       - name: Push package(s) to NuGet.org
-        if: |
-          github.event_name != 'workflow_call' && (!github.event.inputs.dry_run) && (!inputs.dry_run)
+        if: ${{ !inputs.dry_run && !github.event.inputs.dry_run }}
         shell: pwsh
         run: |
           $nupkgs = Get-ChildItem -Path 'nupkg' -Filter '*.nupkg'
@@ -142,8 +142,7 @@ jobs:
           }
 
       - name: Push package(s) to GitHub Packages
-        if: |
-          github.event_name != 'workflow_call' && (!github.event.inputs.dry_run) && (!inputs.dry_run)
+        if: ${{ !inputs.dry_run && !github.event.inputs.dry_run }}
         shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
