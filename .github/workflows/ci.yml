@@ -19,12 +19,52 @@ jobs:
         run: dotnet test SerpentModding.Tests/SerpentModding.Tests.csproj --configuration Release --verbosity normal
       - name: Trigger NuGet Dry Run Workflow
         if: ${{ success() }}
-        shell: cmd
+        shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          curl -X POST ^
-            -H "Accept: application/vnd.github+json" ^
-            -H "Authorization: Bearer %GH_TOKEN%" ^
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/nuget-publish.yml/dispatches ^
-            -d "{\"ref\":\"${{ github.ref }}\",\"inputs\":{\"version\":\"1.0.0\",\"dry_run\":\"true\"}}"
+          $headers = @{
+            "Accept" = "application/vnd.github+json"
+            "Authorization" = "Bearer $env:GH_TOKEN"
+          }
+          $body = '{"ref":"${{ github.ref }}","inputs":{"version":"1.0.0","dry_run":"true"}}'
+          $response = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/actions/workflows/nuget-publish.yml/dispatches" -Headers $headers -Method Post -Body $body
+          Write-Host "nuget-publish workflow triggered. Waiting 10 seconds before polling status..."
+          Start-Sleep -Seconds 10
+          $maxAttempts = 30
+          $attempt = 0
+          $runId = $null
+          while ($null -eq $runId -and $attempt -lt $maxAttempts) {
+            $runs = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/actions/runs?event=workflow_dispatch&branch=${{ github.ref_name }}" -Headers $headers
+            $runId = $runs.workflow_runs | Where-Object { $_.name -eq 'nuget-publish' -and $_.head_sha -eq "${{ github.sha }}" } | Select-Object -First 1 -ExpandProperty id
+            if ($null -eq $runId) {
+              Start-Sleep -Seconds 5
+              $attempt++
+            }
+          }
+          if ($null -eq $runId) {
+            Write-Error "Could not find triggered nuget-publish workflow run for commit ${{ github.sha }}."
+            exit 1
+          }
+          Write-Host "Found nuget-publish runId: $runId. Polling status..."
+          $status = ""
+          $conclusion = ""
+          $pollAttempts = 0
+          while ($status -ne "completed" -and $pollAttempts -lt 60) {
+            $run = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/actions/runs/$runId" -Headers $headers
+            $status = $run.status
+            $conclusion = $run.conclusion
+            if ($status -ne "completed") {
+              Start-Sleep -Seconds 10
+              $pollAttempts++
+            }
+          }
+          if ($status -ne "completed") {
+            Write-Error "nuget-publish workflow did not complete in time."
+            exit 1
+          }
+          if ($conclusion -ne "success") {
+            Write-Error "nuget-publish workflow failed with conclusion: $conclusion"
+            exit 1
+          }
+          Write-Host "nuget-publish workflow completed successfully."
