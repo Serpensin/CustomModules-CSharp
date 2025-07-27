@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'NuGet package version (e.g. 1.2.3) – only used for manual runs'
+        description: 'NuGet package version (e.g. 1.2.3) â€“ only used for manual runs'
         required: true
         type: string
         default: ''
@@ -19,7 +19,7 @@ on:
   workflow_call:
     inputs:
       version:
-        description: 'NuGet package version (e.g. 1.2.3) – only used for manual runs'
+        description: 'NuGet package version (e.g. 1.2.3) â€“ only used for manual runs'
         required: false
         type: string
         default: ''
