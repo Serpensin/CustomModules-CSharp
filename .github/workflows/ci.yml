@@ -15,8 +15,12 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
-      - name: Test
+      - name: Test (Release)
+        if: ${{ !github.event.pull_request.head.repo.fork && (github.event.inputs.dry_run != 'true' && (inputs.dry_run != true)) }}
         run: dotnet test SerpentModding.Tests/SerpentModding.Tests.csproj --configuration Release --verbosity normal
+      - name: Test (Test-Konfiguration)
+        if: ${{ github.event.inputs.dry_run == 'true' || inputs.dry_run == true }}
+        run: dotnet test SerpentModding.Tests/SerpentModding.Tests.csproj --configuration Test --verbosity normal
 
   nuget-dry-run:
     needs: build-and-test
