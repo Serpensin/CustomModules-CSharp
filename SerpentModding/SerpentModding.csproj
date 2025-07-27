@@ -31,13 +31,6 @@
     <DebugType>embedded</DebugType>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)'=='Test'">
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>embedded</DebugType>
-    <OutputPath>bin\Test\</OutputPath>
-  </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="SerpentModding\**\*.cs" />
     <EmbeddedResource Include="SerpentModding\**\*.resx" />

@@ -109,7 +109,7 @@ namespace SerpentModding.Tests
                 {
                     _form?.Dispose();
                     _form = null;
-                    UIController.Test_Reset();
+                    UIController.Reset();
                 }
                 _disposed = true;
             }

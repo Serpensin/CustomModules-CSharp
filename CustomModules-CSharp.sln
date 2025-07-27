@@ -23,9 +23,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
-		Test|Any CPU = Test|Any CPU
-		Test|x64 = Test|x64
-		Test|x86 = Test|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{366069E9-710E-4B3E-8BD2-697EFAA2AFB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU

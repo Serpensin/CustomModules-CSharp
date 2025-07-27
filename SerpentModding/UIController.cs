@@ -132,6 +132,17 @@ namespace SerpentModding
         }
 
         /// <summary>
+        /// Resets the static state of the UIController.
+        /// </summary>
+        public static void Reset()
+        {
+            _mainForm = null;
+            _originalTitle = string.Empty;
+            _controls.Clear();
+            _originalPositions.Clear();
+        }
+
+        /// <summary>
         /// Sets the window icon of the main form.
         /// </summary>
         /// <param name="icon">
@@ -441,18 +452,5 @@ namespace SerpentModding
                 return n1 * t * t + 0.984375;
             }
         }
-
-#if DEBUG
-        /// <summary>
-        /// Resets the static state of the UIController for testing purposes.
-        /// </summary>
-        public static void Test_Reset()
-        {
-            _mainForm = null;
-            _originalTitle = string.Empty;
-            _controls.Clear();
-            _originalPositions.Clear();
-        }
-#endif
     }
 }
