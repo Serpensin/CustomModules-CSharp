@@ -26,8 +26,15 @@ jobs:
           $headers = @{
             "Accept" = "application/vnd.github+json"
             "Authorization" = "Bearer $env:GH_TOKEN"
+            "Content-Type" = "application/json"
           }
-          $body = '{"ref":"${{ github.ref }}","inputs":{"version":"1.0.0","dry_run":"true"}}'
+          $body = @{
+            ref = '${{ github.ref }}'
+            inputs = @{
+              version = '1.0.0'
+              dry_run = 'true'
+            }
+          } | ConvertTo-Json -Depth 2
           $response = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/actions/workflows/nuget-publish.yml/dispatches" -Headers $headers -Method Post -Body $body
           Write-Host "nuget-publish workflow triggered. Waiting 10 seconds before polling status..."
           Start-Sleep -Seconds 10
