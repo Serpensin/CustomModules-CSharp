@@ -24,6 +24,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IS_PR: ${{ github.event_name == 'pull_request' }}
           REF: ${{ github.event_name == 'pull_request' && format('refs/heads/{0}', github.head_ref) || github.ref }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CI_SHA: ${{ github.sha }}
         run: |
           $headers = @{
             "Accept" = "application/vnd.github+json"
@@ -31,6 +33,8 @@ jobs:
             "Content-Type" = "application/json"
           }
           $ref = $env:REF
+          $isPr = $env:IS_PR -eq 'true'
+          $sha = if ($isPr) { $env:PR_HEAD_SHA } else { $env:CI_SHA }
           $body = @{
             ref = $ref
             inputs = @{
@@ -52,14 +56,14 @@ jobs:
           $runId = $null
           while ($null -eq $runId -and $attempt -lt $maxAttempts) {
             $runs = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/actions/workflows/nuget-publish.yml/runs" -Headers $headers
-            $runId = $runs.workflow_runs | Where-Object { $_.head_sha -eq "${{ github.sha }}" } | Select-Object -First 1 -ExpandProperty id
+            $runId = $runs.workflow_runs | Where-Object { $_.head_sha -eq $sha } | Select-Object -First 1 -ExpandProperty id
             if ($null -eq $runId) {
               Start-Sleep -Seconds 5
               $attempt++
             }
           }
           if ($null -eq $runId) {
-            Write-Error "Could not find triggered nuget-publish workflow run for commit ${{ github.sha }}."
+            Write-Error "Could not find triggered nuget-publish workflow run for commit $sha."
             exit 1
           }
           Write-Host "Found nuget-publish runId: $runId. Polling status..."
