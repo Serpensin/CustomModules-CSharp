@@ -10,12 +10,12 @@ on:
         description: 'NuGet package version (e.g. 1.2.3) – only used for manual runs'
         required: true
         type: string
-        default: ''
+        default: '1.0.0'
       dry_run:
         description: 'Skip pushing packages (for CI dry-run integration)'
         required: false
         type: boolean
-        default: false
+        default: true
 
 jobs:
   check-branch:
@@ -60,13 +60,7 @@ jobs:
         id: get_version
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" = "workflow_call" ] && [ -n "${{ inputs.version }}" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-          fi
+          echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
 
       - name: Update csproj version
         shell: pwsh
