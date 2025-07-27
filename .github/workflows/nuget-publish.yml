@@ -63,8 +63,16 @@ jobs:
               echo "Error: 'version' input is missing for workflow_dispatch event." >&2
               exit 1
             fi
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            if [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+            else
+              echo "Invalid tag format. Expected 'v*.*.*'. Exiting." >&2
+              exit 1
+            fi
           else
-            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+            echo "Unsupported event: ${GITHUB_EVENT_NAME}. Exiting." >&2
+            exit 1
           fi
 
       - name: Update csproj version
