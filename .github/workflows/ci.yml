@@ -20,7 +20,7 @@ jobs:
 
   nuget-dry-run:
     needs: build-and-test
-    uses: ./.github/workflows/nuget-publish.yml
+    uses: ./.github/workflows/nuget-publish.yml@main
     with:
       version: '1.0.0'
       dry_run: true
