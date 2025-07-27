@@ -19,10 +19,10 @@ on:
 
 jobs:
   check-branch:
-    if: github.ref_name == github.event.repository.default_branch || github.event_name == 'workflow_call'
+    if: github.ref_name == github.event.repository.default_branch || github.event.inputs.dry_run == 'true'
     runs-on: ubuntu-latest
     steps:
-      - run: echo "This workflow only runs on the default branch or when called by another workflow."
+      - run: echo "This workflow only runs on the default branch or when called with dry_run=true."
 
   build:
     needs: check-branch
