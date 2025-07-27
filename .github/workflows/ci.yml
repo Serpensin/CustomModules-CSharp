@@ -35,8 +35,8 @@ jobs:
           $attempt = 0
           $runId = $null
           while ($null -eq $runId -and $attempt -lt $maxAttempts) {
-            $runs = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/actions/runs?event=workflow_dispatch&branch=${{ github.ref_name }}" -Headers $headers
-            $runId = $runs.workflow_runs | Where-Object { $_.name -eq 'nuget-publish' -and $_.head_sha -eq "${{ github.sha }}" } | Select-Object -First 1 -ExpandProperty id
+            $runs = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/actions/workflows/nuget-publish.yml/runs" -Headers $headers
+            $runId = $runs.workflow_runs | Where-Object { $_.head_sha -eq "${{ github.sha }}" } | Select-Object -First 1 -ExpandProperty id
             if ($null -eq $runId) {
               Start-Sleep -Seconds 5
               $attempt++
