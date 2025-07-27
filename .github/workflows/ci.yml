@@ -22,26 +22,29 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IS_PR: ${{ github.event_name == 'pull_request' }}
+          REF: ${{ github.event_name == 'pull_request' && format('refs/heads/{0}', github.head_ref) || github.ref }}
         run: |
           $headers = @{
             "Accept" = "application/vnd.github+json"
             "Authorization" = "Bearer $env:GH_TOKEN"
             "Content-Type" = "application/json"
           }
+          $ref = $env:REF
           $body = @{
-            ref = '${{ github.ref }}'
+            ref = $ref
             inputs = @{
               version = '1.0.0'
               dry_run = 'true'
             }
           } | ConvertTo-Json -Depth 2
           $response = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/actions/workflows/nuget-publish.yml/dispatches" -Headers $headers -Method Post -Body $body
-            if ($response -ne $null) {
-                Write-Host "NuGet dry run workflow triggered successfully."
-            } else {
-                Write-Error "Failed to trigger NuGet dry run workflow."
-                exit 1
-            }
+          if ($response -ne $null) {
+              Write-Host "NuGet dry run workflow triggered successfully."
+          } else {
+              Write-Error "Failed to trigger NuGet dry run workflow."
+              exit 1
+          }
           Write-Host "nuget-publish workflow triggered. Waiting 10 seconds before polling status..."
           Start-Sleep -Seconds 10
           $maxAttempts = 30
