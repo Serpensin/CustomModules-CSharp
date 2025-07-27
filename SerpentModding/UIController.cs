@@ -7,7 +7,7 @@ namespace SerpentModding
     /// and animated transitions between registered <see cref="UserControl"/> instances. 
     /// Supports customizable transition directions and easing modes for smooth UI animations.
     /// </summary>
-    public static class UIController
+    public static partial class UIController
     {
         private static Form? _mainForm;
         private static string _originalTitle = string.Empty;
@@ -146,43 +146,73 @@ namespace SerpentModding
 
         /// <summary>
         /// Registers a <see cref="UserControl"/> with a unique name for later display and animated transitions.
-        /// Stores the control's original position for use in transition animations.
         /// </summary>
         /// <param name="name">
-        /// The unique name to associate with the control. Used to reference the control in other UIController methods.
+        /// The unique name to associate with the control. Must not already be registered.
         /// </param>
         /// <param name="control">
-        /// The <see cref="UserControl"/> instance to register.
+        /// The <see cref="UserControl"/> instance to register. Must not already be registered under a different name.
         /// </param>
+        /// <exception cref="ArgumentException">
+        /// Thrown if a control with the specified <paramref name="name"/> is already registered.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown if the specified <paramref name="control"/> instance is already registered under a different name.
+        /// </exception>
         public static void RegisterControl(string name, UserControl control)
         {
-            if (!_controls.ContainsKey(name))
-            {
-                _controls.Add(name, control);
-                _originalPositions[name] = control.Location;
-            }
+            if (_controls.ContainsKey(name))
+                throw new ArgumentException($"A control with the name '{name}' is already registered.", nameof(name));
+            var existing = _controls.FirstOrDefault(kvp => kvp.Value == control);
+            if (!string.IsNullOrEmpty(existing.Key))
+                throw new InvalidOperationException($"This UserControl instance is already registered under the name '{existing.Key}'.");
+
+            _controls.Add(name, control);
+            _originalPositions[name] = control.Location;
         }
 
         /// <summary>
-        /// Displays the specified registered <see cref="UserControl"/> in the main form,
-        /// optionally animating the transition from the currently visible control.
+        /// Removes a registered <see cref="UserControl"/> by its unique name.
+        /// </summary>
+        /// <param name="name">The unique name of the control to remove.</param>
+        /// <exception cref="KeyNotFoundException">Thrown if no control is registered with the specified <paramref name="name"/>.</exception>
+        public static void RemoveControl(string name)
+        {
+            if (!_controls.ContainsKey(name))
+                throw new KeyNotFoundException($"No control registered with the name '{name}'.");
+            _controls.Remove(name);
+            _originalPositions.Remove(name);
+        }
+
+        /// <summary>
+        /// Shows the specified registered <see cref="UserControl"/> by name, optionally animating the transition
+        /// from the currently visible control using the specified direction, duration, and easing mode.
         /// </summary>
         /// <param name="name">
-        /// The unique name of the control to display, as registered via <see cref="RegisterControl(string, UserControl)"/>.
+        /// The unique name of the control to display. Must be registered using <see cref="RegisterControl(string, UserControl)"/>.
         /// </param>
         /// <param name="direction">
-        /// The direction of the transition animation. If <see cref="TransitionDirection.None"/>, no animation is performed.
+        /// The <see cref="TransitionDirection"/> specifying the direction of the transition animation.
+        /// Use <see cref="TransitionDirection.None"/> for an instant switch without animation.
         /// </param>
         /// <param name="durationMs">
         /// The duration of the transition animation in milliseconds. Ignored if <paramref name="direction"/> is <see cref="TransitionDirection.None"/>.
         /// </param>
         /// <param name="easingMode">
-        /// The easing mode to use for the transition animation. Ignored if <paramref name="direction"/> is <see cref="TransitionDirection.None"/>.
+        /// The <see cref="EasingMode"/> to use for the animation's rate of change. Ignored if <paramref name="direction"/> is <see cref="TransitionDirection.None"/>.
         /// </param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown if the <see cref="UIController"/> has not been initialized with a main form.
+        /// </exception>
+        /// <exception cref="KeyNotFoundException">
+        /// Thrown if no control is registered with the specified <paramref name="name"/>.
+        /// </exception>
         public static void ShowControl(string name, TransitionDirection direction = TransitionDirection.None, int durationMs = 400, EasingMode easingMode = EasingMode.Linear)
         {
-            if (_mainForm == null || !_controls.ContainsKey(name))
-                return;
+            if (_mainForm == null)
+                throw new InvalidOperationException("UIController is not initialized. Call Init(Form main) before using ShowControl.");
+            if (!_controls.ContainsKey(name))
+                throw new KeyNotFoundException($"No control registered with the name '{name}'.");
 
             if (direction == TransitionDirection.None)
             {
@@ -370,9 +400,12 @@ namespace SerpentModding
         private static double ElasticOut(double t)
         {
             const double c4 = 2 * Math.PI / 3;
-            return t == 0 ? 0
-                : t == 1 ? 1
-                : Math.Pow(2, -10 * t) * Math.Sin((t * 10 - 0.75) * c4) + 1;
+            const double epsilon = 1e-8;
+            if (Math.Abs(t) < epsilon)
+                return 0;
+            if (Math.Abs(t - 1) < epsilon)
+                return 1;
+            return Math.Pow(2, -10 * t) * Math.Sin((t * 10 - 0.75) * c4) + 1;
         }
 
         /// <summary>
@@ -393,11 +426,33 @@ namespace SerpentModding
             if (t < 1 / d1)
                 return n1 * t * t;
             else if (t < 2 / d1)
-                return n1 * (t -= 1.5 / d1) * t + 0.75;
+            {
+                t -= 1.5 / d1;
+                return n1 * t * t + 0.75;
+            }
             else if (t < 2.5 / d1)
-                return n1 * (t -= 2.25 / d1) * t + 0.9375;
+            {
+                t -= 2.25 / d1;
+                return n1 * t * t + 0.9375;
+            }
             else
-                return n1 * (t -= 2.625 / d1) * t + 0.984375;
+            {
+                t -= 2.625 / d1;
+                return n1 * t * t + 0.984375;
+            }
         }
+
+#if DEBUG
+        /// <summary>
+        /// Resets the static state of the UIController for testing purposes.
+        /// </summary>
+        public static void Test_Reset()
+        {
+            _mainForm = null;
+            _originalTitle = string.Empty;
+            _controls.Clear();
+            _originalPositions.Clear();
+        }
+#endif
     }
 }

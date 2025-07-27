@@ -16,6 +16,11 @@ namespace SerpentModding
         private bool isRunning = false;
 
         /// <summary>
+        /// Gets a value indicating whether the scanner is currently running.
+        /// </summary>
+        public bool IsRunning => isRunning;
+
+        /// <summary>
         /// Gets or sets the width of the scanning beam in pixels.
         /// </summary>
         public int BeamWidth { get; set; } = 100;

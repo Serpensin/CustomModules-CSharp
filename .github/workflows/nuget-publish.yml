@@ -10,6 +10,22 @@ on:
         description: 'NuGet package version (e.g. 1.2.3) – only used for manual runs'
         required: true
         default: ''
+      dry_run:
+        description: 'If true, skip pushing packages (for CI dry-run integration)'
+        required: false
+        default: 'false'
+  workflow_call:
+    inputs:
+      version:
+        description: 'NuGet package version (e.g. 1.2.3) – only used for manual runs'
+        required: false
+        type: string
+        default: ''
+      dry_run:
+        description: 'If true, skip pushing packages (for CI dry-run integration)'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   check-branch:
@@ -56,6 +72,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "workflow_call" ] && [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
           else
             echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
           fi
@@ -112,6 +130,8 @@ jobs:
         run: dotnet pack SerpentModding/SerpentModding.csproj --configuration Release --no-build --output nupkg
 
       - name: Push package(s) to NuGet.org
+        if: |
+          github.event_name != 'workflow_call' && (github.event.inputs.dry_run != 'true') && (inputs.dry_run != true)
         shell: pwsh
         run: |
           $nupkgs = Get-ChildItem -Path 'nupkg' -Filter '*.nupkg'
@@ -121,6 +141,8 @@ jobs:
           }
 
       - name: Push package(s) to GitHub Packages
+        if: |
+          github.event_name != 'workflow_call' && (github.event.inputs.dry_run != 'true') && (inputs.dry_run != true)
         shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
