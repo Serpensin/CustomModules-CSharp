@@ -131,8 +131,7 @@ jobs:
         shell: bash
         run: |
           DEFAULT_BRANCH="master"
-          git fetch origin $DEFAULT_BRANCH
-          if git merge-base --is-ancestor origin/$DEFAULT_BRANCH ${{ github.sha }}; then
+          if [ "${GITHUB_REF_NAME}" = "$DEFAULT_BRANCH" ]; then
             echo "on_default_branch=true" >> $GITHUB_OUTPUT
           else
             echo "on_default_branch=false" >> $GITHUB_OUTPUT
