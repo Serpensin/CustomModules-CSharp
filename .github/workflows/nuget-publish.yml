@@ -24,8 +24,8 @@ on:
       dry_run:
         description: 'If true, skip pushing packages (for CI dry-run integration)'
         required: false
-        type: boolean
-        default: false
+        type: string
+        default: 'false'
 
 jobs:
   check-branch:
@@ -72,8 +72,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" = "workflow_call" ] && [ "${{ inputs.dry_run }}" = "true" ]; then
-            echo "version=1.0.0" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "workflow_call" ] && [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
           else
             echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
           fi
