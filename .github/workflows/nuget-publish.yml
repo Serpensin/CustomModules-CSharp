@@ -7,21 +7,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'NuGet package version (e.g. 1.2.3) – only used for manual runs'
+        description: 'NuGet package version (e.g. 1.2.3) - only used for manual runs'
         required: true
-        type: string
-        default: '1.0.0'
-      dry_run:
-        description: 'Skip pushing packages (for CI dry-run integration)'
-        required: false
-        type: boolean
-        default: true
+        default: ''
 
 jobs:
   build:
-    if: |
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) ||
-      (github.event_name == 'workflow_dispatch')
+    if: github.ref_name == github.event.repository.default_branch
     runs-on: windows-latest
     steps:
       - name: Checkout repository
@@ -30,7 +22,6 @@ jobs:
           fetch-depth: 0
 
       - name: Check if tag is on master
-        if: github.event_name == 'push'
         id: check_tag
         shell: bash
         run: |
@@ -42,7 +33,7 @@ jobs:
           fi
 
       - name: Fail if tag is not on master
-        if: github.event_name == 'push' && steps.check_tag.outputs.on_master != 'true'
+        if: steps.check_tag.outputs.on_master != 'true'
         run: |
           echo "Tag is not on master. Exiting."
           exit 1
@@ -56,23 +47,10 @@ jobs:
         id: get_version
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            if [ -n "${{ github.event.inputs.version }}" ]; then
-              echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-            else
-              echo "Error: 'version' input is missing for workflow_dispatch event." >&2
-              exit 1
-            fi
-          elif [ "${{ github.event_name }}" = "push" ]; then
-            if [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
-            else
-              echo "Invalid tag format. Expected 'v*.*.*'. Exiting." >&2
-              exit 1
-            fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
           else
-            echo "Unsupported event: ${GITHUB_EVENT_NAME}. Exiting." >&2
-            exit 1
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
           fi
 
       - name: Update csproj version
@@ -126,19 +104,7 @@ jobs:
       - name: Pack
         run: dotnet pack SerpentModding/SerpentModding.csproj --configuration Release --no-build --output nupkg
 
-      - name: Check if on default branch
-        id: check_default_branch
-        shell: bash
-        run: |
-          DEFAULT_BRANCH="master"
-          if [ "${GITHUB_REF_NAME}" = "$DEFAULT_BRANCH" ]; then
-            echo "on_default_branch=true" >> $GITHUB_OUTPUT
-          else
-            echo "on_default_branch=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Push package(s) to NuGet.org
-        if: (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run != true)) && steps.check_default_branch.outputs.on_default_branch == 'true'
         shell: pwsh
         run: |
           $nupkgs = Get-ChildItem -Path 'nupkg' -Filter '*.nupkg'
@@ -148,7 +114,6 @@ jobs:
           }
 
       - name: Push package(s) to GitHub Packages
-        if: (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run != true)) && steps.check_default_branch.outputs.on_default_branch == 'true'
         shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

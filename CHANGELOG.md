@@ -1,4 +1,4 @@
-## [1.1.0] - 2025-07-27
+## [1.1.0] - 2025-07-28
 - Added `UIController.RemoveControl(string name)` to allow removing registered UserControls at runtime.
 - Documentation: Updated README with RemoveControl usage example in the UIController section.
 

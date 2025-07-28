@@ -17,74 +17,74 @@ jobs:
           dotnet-version: '9.0.x'
       - name: Test
         run: dotnet test SerpentModding.Tests/SerpentModding.Tests.csproj --configuration Release --verbosity normal
-      - name: Trigger NuGet Dry Run Workflow
-        if: ${{ success() }}
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          IS_PR: ${{ github.event_name == 'pull_request' }}
-          REF: ${{ github.event_name == 'pull_request' && format('refs/heads/{0}', github.head_ref) || github.ref }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          CI_SHA: ${{ github.sha }}
+
+  nuget-dry-run:
+    needs: build-and-test
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Extract version
+        id: get_version
+        shell: bash
         run: |
-          $headers = @{
-            "Accept" = "application/vnd.github+json"
-            "Authorization" = "Bearer $env:GH_TOKEN"
-            "Content-Type" = "application/json"
-          }
-          $ref = $env:REF
-          $isPr = $env:IS_PR -eq 'true'
-          $sha = if ($isPr) { $env:PR_HEAD_SHA } else { $env:CI_SHA }
-          $body = @{
-            ref = $ref
-            inputs = @{
-              version = '1.0.0'
-              dry_run = 'true'
-            }
-          } | ConvertTo-Json -Depth 2
-          $response = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/actions/workflows/nuget-publish.yml/dispatches" -Headers $headers -Method Post -Body $body
-          if ($response -ne $null) {
-              Write-Host "NuGet dry run workflow triggered successfully."
+          echo "version=1.0.0" >> $GITHUB_OUTPUT
+
+      - name: Update csproj version
+        shell: pwsh
+        run: |
+          $proj = 'SerpentModding/SerpentModding.csproj'
+          $version = '${{ steps.get_version.outputs.version }}'
+          if (-not $version) { Write-Error 'No version specified or detected!'; exit 1 }
+          $content = Get-Content $proj -Raw
+          if ($content -match '<Version>.*</Version>') {
+            $content = $content -replace '<Version>.*</Version>', "<Version>$version</Version>"
           } else {
-              Write-Error "Failed to trigger NuGet dry run workflow."
-              exit 1
+            $content = $content -replace '(<PropertyGroup>)', "`$1`n    <Version>$version</Version>"
           }
-          Write-Host "nuget-publish workflow triggered. Waiting 10 seconds before polling status..."
-          Start-Sleep -Seconds 10
-          $maxAttempts = 30
-          $attempt = 0
-          $runId = $null
-          while ($null -eq $runId -and $attempt -lt $maxAttempts) {
-            $runs = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/actions/workflows/nuget-publish.yml/runs" -Headers $headers
-            $runId = $runs.workflow_runs | Where-Object { $_.head_sha -eq $sha } | Select-Object -First 1 -ExpandProperty id
-            if ($null -eq $runId) {
-              Start-Sleep -Seconds 5
-              $attempt++
-            }
+          Set-Content $proj $content
+
+      - name: Extract release notes from CHANGELOG.md
+        id: changelog
+        shell: pwsh
+        run: |
+          $version = '${{ steps.get_version.outputs.version }}'
+          $lines = Get-Content CHANGELOG.md
+          $start = ($lines | Select-String "## \[$version\]").LineNumber
+          if (-not $start) { Write-Error "No changelog entry for version $version"; exit 1 }
+          $startIdx = $start
+          $next = ($lines | Select-String "^## \[" | Where-Object { $_.LineNumber -gt $startIdx }) | Select-Object -First 1
+          $endIdx = if ($next) { $next.LineNumber - 1 } else { $lines.Count }
+          $notes = $lines[($startIdx)..($endIdx - 1)] -join "`n"
+          $notes = $notes -replace '^## \[.*\] - .*\r?\n?', ''
+          echo "notes<<EOF" >> $env:GITHUB_OUTPUT
+          echo "$notes" >> $env:GITHUB_OUTPUT
+          echo "EOF" >> $env:GITHUB_OUTPUT
+
+      - name: Update csproj release notes
+        shell: pwsh
+        run: |
+          $proj = 'SerpentModding/SerpentModding.csproj'
+          $notes = '${{ steps.changelog.outputs.notes }}'
+          $content = Get-Content $proj -Raw
+          if ($content -match '<PackageReleaseNotes>.*</PackageReleaseNotes>') {
+            $content = $content -replace '<PackageReleaseNotes>.*</PackageReleaseNotes>', "<PackageReleaseNotes>$notes</PackageReleaseNotes>"
           }
-          if ($null -eq $runId) {
-            Write-Error "Could not find triggered nuget-publish workflow run for commit $sha."
-            exit 1
-          }
-          Write-Host "Found nuget-publish runId: $runId. Polling status..."
-          $status = ""
-          $conclusion = ""
-          $pollAttempts = 0
-          while ($status -ne "completed" -and $pollAttempts -lt 60) {
-            $run = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/actions/runs/$runId" -Headers $headers
-            $status = $run.status
-            $conclusion = $run.conclusion
-            if ($status -ne "completed") {
-              Start-Sleep -Seconds 10
-              $pollAttempts++
-            }
-          }
-          if ($status -ne "completed") {
-            Write-Error "nuget-publish workflow did not complete in time."
-            exit 1
-          }
-          if ($conclusion -ne "success") {
-            Write-Error "nuget-publish workflow failed with conclusion: $conclusion"
-            exit 1
-          }
-          Write-Host "nuget-publish workflow completed successfully."
+          Set-Content $proj $content
+
+      - name: Restore dependencies
+        run: dotnet restore SerpentModding/SerpentModding.csproj
+
+      - name: Build
+        run: dotnet build SerpentModding/SerpentModding.csproj --configuration Release --no-restore
+
+      - name: Pack
+        run: dotnet pack SerpentModding/SerpentModding.csproj --configuration Release --no-build --output nupkg
