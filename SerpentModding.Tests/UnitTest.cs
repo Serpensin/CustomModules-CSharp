@@ -94,6 +94,41 @@ namespace SerpentModding.Tests
             Assert.True(string.IsNullOrEmpty(path) || !File.Exists(path));
             Assert.Empty(logs);
         }
+
+        [Fact]
+        public void Logger_LogLevel_Padding_Is_Consistent()
+        {
+            var logger = Logger.Instance;
+            var logDir = Path.Combine(_tempLogDirectory, "PaddingTest");
+            Directory.CreateDirectory(logDir);
+            logger.Initialize(LogLevel.Trace, logToConsole: false, logDirectory: logDir);
+            logger.Trace("TracePadding");
+            logger.Debug("DebugPadding");
+            logger.Info("InfoPadding");
+            logger.Warn("WarnPadding");
+            logger.Error("ErrorPadding");
+            logger.Fatal("FatalPadding");
+            var logs = logger.ReadAllLogs();
+            foreach (var level in new[] { "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL" })
+            {
+                var padded = level.PadRight(5);
+                Assert.Contains(logs, l => l.Contains($"[{padded}]") );
+            }
+            // Additionally: Each line with [LEVEL] must have 5 characters in the level field
+            foreach (var line in logs)
+            {
+                var start = line.IndexOf('[') + 1;
+                var end = line.IndexOf(']', start);
+                if (start > 0 && end > start && line.Length > end + 1 && line[end + 1] == ' ' && line[start - 1] == '[')
+                {
+                    var maybeLevel = line.Substring(start, end - start);
+                    if (new[] { "TRACE", "DEBUG", "INFO ", "WARN ", "ERROR", "FATAL" }.Contains(maybeLevel))
+                    {
+                        Assert.Equal(5, maybeLevel.Length);
+                    }
+                }
+            }
+        }
     }
     
     public class UIControllerTests : IDisposable
