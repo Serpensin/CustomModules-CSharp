@@ -1,6 +1,6 @@
 ## [1.1.1] - 2025-07-30
-- Logger: Einheitliche Padding-Formatierung für das LogLevel-Feld im Log eingeführt, sodass alle Level (z.B. INFO, FATAL) gleich breit erscheinen.
-- Logger: Unittest ergänzt, der prüft, dass das LogLevel im Log immer auf 5 Zeichen gepaddet ist.
+- Logger: Added consistent padding formatting for the LogLevel field in logs so that all levels (e.g., INFO, FATAL) appear with equal width.
+- Logger: Added a unit test to verify that the LogLevel in logs is always padded to 5 characters.
 
 ## [1.1.0] - 2025-07-28
 - Added `UIController.RemoveControl(string name)` to allow removing registered UserControls at runtime.
