@@ -114,7 +114,7 @@ namespace SerpentModding.Tests
                 var padded = level.PadRight(5);
                 Assert.Contains(logs, l => l.Contains($"[{padded}]") );
             }
-            // Zusätzlich: Jede Zeile mit [LEVEL] muss 5 Zeichen im Level-Feld haben
+            // Additionally: Each line with [LEVEL] must have 5 characters in the level field
             foreach (var line in logs)
             {
                 var start = line.IndexOf('[') + 1;
