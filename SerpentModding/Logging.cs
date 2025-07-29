@@ -146,7 +146,8 @@ namespace SerpentModding
             var callerNamespace = GetCallingNamespace();
             var className = Path.GetFileNameWithoutExtension(file ?? "UnknownClass");
             var location = $"{className}.{caller}():{line}";
-            var formatted = $"[{timestamp}] [{level.ToString().ToUpper()}] {{{callerNamespace}}} [{location}] {message}";
+            var levelStr = level.ToString().ToUpper().PadRight(5);
+            var formatted = $"[{timestamp}] [{levelStr}] {{{callerNamespace}}} [{location}] {message}";
 
             lock (_lock)
             {
