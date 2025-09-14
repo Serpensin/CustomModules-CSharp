@@ -105,11 +105,13 @@ jobs:
 
       - name: Push package(s) to NuGet.org
         shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
           $nupkgs = Get-ChildItem -Path 'nupkg' -Filter '*.nupkg'
           foreach ($pkg in $nupkgs) {
             Write-Host "Pushing $($pkg.FullName)..."
-            dotnet nuget push $pkg.FullName --api-key '${{ secrets.NUGET_API_KEY }}' --source https://api.nuget.org/v3/index.json --skip-duplicate
+            dotnet nuget push $pkg.FullName --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
           }
 
       - name: Push package(s) to GitHub Packages
