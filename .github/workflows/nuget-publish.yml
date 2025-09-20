@@ -1,18 +1,16 @@
 name: Build and Publish NuGet
 
 on:
-  release:
-    types: [published]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'NuGet package version (e.g. 1.2.3) - only used for manual runs'
-        required: true
-        default: ''
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches:
+      - master
 
 jobs:
   build:
-    if: github.ref_name == github.event.repository.default_branch
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: windows-latest
     steps:
       - name: Checkout repository
@@ -25,16 +23,16 @@ jobs:
         shell: bash
         run: |
           git fetch origin master
-          if git merge-base --is-ancestor origin/master ${{ github.sha }}; then
+          if git merge-base --is-ancestor origin/master ${{ github.event.workflow_run.head_sha }}; then
             echo "on_master=true" >> $GITHUB_OUTPUT
           else
             echo "on_master=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Fail if tag is not on master
+      - name: Fail if commit is not on master
         if: steps.check_tag.outputs.on_master != 'true'
         run: |
-          echo "Tag is not on master. Exiting."
+          echo "Triggering commit is not on master. Exiting."
           exit 1
 
       - name: Setup .NET
@@ -46,10 +44,16 @@ jobs:
         id: get_version
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          # Try to get the latest tag version, fallback to date-based version
+          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [[ -n "$latest_tag" && "$latest_tag" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            version=${latest_tag#v}
+            echo "version=$version" >> $GITHUB_OUTPUT
           else
-            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+            # Use date-based version as fallback
+            date_version=$(date +"%Y.%m.%d")
+            run_number=${{ github.run_number }}
+            echo "version=$date_version.$run_number" >> $GITHUB_OUTPUT
           fi
 
       - name: Update csproj version
@@ -73,12 +77,16 @@ jobs:
           $version = '${{ steps.get_version.outputs.version }}'
           $lines = Get-Content CHANGELOG.md
           $start = ($lines | Select-String "## \[$version\]").LineNumber
-          if (-not $start) { Write-Error "No changelog entry for version $version"; exit 1 }
-          $startIdx = $start
-          $next = ($lines | Select-String "^## \[" | Where-Object { $_.LineNumber -gt $startIdx }) | Select-Object -First 1
-          $endIdx = if ($next) { $next.LineNumber - 1 } else { $lines.Count }
-          $notes = $lines[($startIdx)..($endIdx - 1)] -join "`n"
-          $notes = $notes -replace '^## \[.*\] - .*\r?\n?', ''
+          if ($start) {
+            $startIdx = $start
+            $next = ($lines | Select-String "^## \[" | Where-Object { $_.LineNumber -gt $startIdx }) | Select-Object -First 1
+            $endIdx = if ($next) { $next.LineNumber - 1 } else { $lines.Count }
+            $notes = $lines[($startIdx)..($endIdx - 1)] -join "`n"
+            $notes = $notes -replace '^## \[.*\] - .*\r?\n?', ''
+          } else {
+            # Fallback to generic message if no changelog entry found
+            $notes = "Automated build from CI pipeline on $(Get-Date -Format 'yyyy-MM-dd')"
+          }
           echo "notes<<EOF" >> $env:GITHUB_OUTPUT
           echo "$notes" >> $env:GITHUB_OUTPUT
           echo "EOF" >> $env:GITHUB_OUTPUT
